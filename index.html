@@ -1,0 +1,1801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clarity Ops Co — AI Sales Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0b0f0e;
+    --surface: #131918;
+    --surface2: #1a2120;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --accent: #00e5a0;
+    --accent2: #00b87a;
+    --accent-dim: rgba(0,229,160,0.12);
+    --accent-glow: rgba(0,229,160,0.25);
+    --text: #eef2f0;
+    --text2: #8a9e96;
+    --text3: #4a5e56;
+    --danger: #ff5b5b;
+    --warn: #ffb84d;
+    --info: #5b9fff;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* HEADER */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: -0.5px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-badge {
+    background: var(--accent);
+    color: #000;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    font-weight: 500;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .status-dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--accent-glow);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .header-stat {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text2);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .header-stat span { color: var(--accent); font-weight: 500; }
+
+  /* LAYOUT */
+  .app { display: flex; flex: 1; height: calc(100vh - 57px); }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 260px;
+    min-width: 260px;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .sidebar-section { padding: 16px; border-bottom: 1px solid var(--border); }
+  .sidebar-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+  .channel-list { display: flex; flex-direction: column; gap: 4px; }
+  .channel-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background 0.15s;
+    border: 1px solid transparent;
+  }
+  .channel-item:hover { background: var(--surface2); }
+  .channel-item.active { background: var(--accent-dim); border-color: rgba(0,229,160,0.2); }
+  .channel-icon {
+    width: 28px; height: 28px;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .ch-email { background: rgba(91,159,255,0.15); }
+  .ch-ig { background: rgba(229,0,118,0.15); }
+  .ch-fb { background: rgba(59,89,152,0.25); }
+  .ch-sms { background: rgba(0,229,160,0.12); }
+  .channel-name { font-size: 13px; font-weight: 500; flex: 1; }
+  .channel-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text2);
+    background: var(--surface2);
+    padding: 1px 6px;
+    border-radius: 20px;
+  }
+
+  .lead-source-list { display: flex; flex-direction: column; gap: 4px; }
+  .lead-source-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 10px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .lead-source-item:hover { background: var(--surface2); }
+  .lead-source-item.active { color: var(--accent); }
+  .source-left { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .source-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); }
+  .lead-source-item.active .source-dot { background: var(--accent); }
+
+  .sidebar-stats { display: flex; flex-direction: column; gap: 8px; }
+  .stat-row { display: flex; justify-content: space-between; align-items: center; }
+  .stat-label { font-size: 12px; color: var(--text2); }
+  .stat-val { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; }
+  .stat-val.green { color: var(--accent); }
+  .stat-val.warn { color: var(--warn); }
+  .stat-val.red { color: var(--danger); }
+
+  /* MAIN */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    padding: 0 20px;
+    gap: 2px;
+  }
+  .tab {
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* PANEL */
+  .panel { flex: 1; overflow-y: auto; padding: 20px; display: none; }
+  .panel.active { display: flex; flex-direction: column; gap: 16px; }
+
+  /* COMPOSE PANEL */
+  .compose-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+  }
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-title .badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    font-weight: 500;
+    padding: 2px 7px;
+    border-radius: 20px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .form-row { margin-bottom: 12px; }
+  .form-label {
+    display: block;
+    font-size: 11px;
+    color: var(--text2);
+    margin-bottom: 5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: 'DM Mono', monospace;
+  }
+  .form-input, .form-select, .form-textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 9px 12px;
+    transition: border-color 0.15s;
+    outline: none;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--accent);
+  }
+  .form-textarea { resize: none; min-height: 80px; line-height: 1.5; }
+  .form-select { appearance: none; cursor: pointer; }
+
+  .channel-toggles { display: flex; gap: 8px; flex-wrap: wrap; }
+  .channel-toggle {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border2);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.15s;
+    background: transparent;
+    color: var(--text2);
+  }
+  .channel-toggle.on { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+  .preview-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text);
+    min-height: 120px;
+    position: relative;
+  }
+  .preview-placeholder { color: var(--text3); font-style: italic; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 18px;
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+  }
+  .btn-primary:hover { background: #00f0aa; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text2);
+    border: 1px solid var(--border2);
+  }
+  .btn-ghost:hover { color: var(--text); border-color: var(--border2); background: var(--surface2); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* SEQUENCE BUILDER */
+  .sequence-list { display: flex; flex-direction: column; gap: 10px; }
+  .seq-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    position: relative;
+  }
+  .seq-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+    border: 1px solid rgba(0,229,160,0.3);
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .seq-content { flex: 1; }
+  .seq-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .seq-channel-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .badge-email { background: rgba(91,159,255,0.15); color: #5b9fff; }
+  .badge-ig { background: rgba(229,0,118,0.15); color: #e0006d; }
+  .badge-fb { background: rgba(100,149,237,0.2); color: #6495ed; }
+  .badge-sms { background: rgba(0,229,160,0.12); color: var(--accent); }
+  .seq-delay { font-size: 11px; color: var(--text3); }
+  .seq-preview { font-size: 12px; color: var(--text2); line-height: 1.5; }
+  .seq-connector {
+    width: 1px; height: 14px;
+    background: var(--border2);
+    margin: 0 auto;
+  }
+
+  /* LEADS TABLE */
+  .leads-toolbar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 4px;
+  }
+  .search-box {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    outline: none;
+    min-width: 200px;
+  }
+  .search-box::placeholder { color: var(--text3); }
+  .search-box:focus { border-color: var(--accent); }
+
+  .leads-table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead { background: var(--surface2); }
+  th {
+    text-align: left;
+    padding: 10px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 500;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 11px 14px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tbody tr { transition: background 0.1s; cursor: pointer; }
+  tbody tr:hover { background: var(--surface2); }
+
+  .status-pill {
+    display: inline-flex;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .s-queued { background: rgba(138,158,150,0.15); color: var(--text2); }
+  .s-sent { background: rgba(91,159,255,0.12); color: #5b9fff; }
+  .s-replied { background: rgba(0,229,160,0.12); color: var(--accent); }
+  .s-booked { background: rgba(0,229,160,0.25); color: var(--accent); border: 1px solid rgba(0,229,160,0.3); }
+  .s-bounced { background: rgba(255,91,91,0.12); color: var(--danger); }
+
+  .source-tag {
+    font-size: 11px;
+    color: var(--text3);
+    display: flex; align-items: center; gap: 4px;
+  }
+
+  /* ACTIVITY FEED */
+  .activity-feed { display: flex; flex-direction: column; gap: 0; }
+  .activity-item {
+    display: flex; gap: 14px; align-items: flex-start;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .activity-body { flex: 1; }
+  .activity-title { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+  .activity-meta { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
+  .activity-time { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; white-space: nowrap; }
+
+  /* SETTINGS */
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-info { flex: 1; }
+  .toggle-info-title { font-size: 13px; font-weight: 500; }
+  .toggle-info-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .toggle {
+    width: 36px; height: 20px;
+    background: var(--surface2);
+    border-radius: 10px;
+    position: relative;
+    cursor: pointer;
+    border: 1px solid var(--border2);
+    transition: background 0.2s;
+    flex-shrink: 0;
+    margin-left: 12px;
+  }
+  .toggle.on { background: var(--accent); border-color: var(--accent); }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 14px; height: 14px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .toggle.on::after { transform: translateX(16px); }
+
+  .limits-row { display: flex; gap: 12px; }
+  .limit-box {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    text-align: center;
+  }
+  .limit-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--accent);
+  }
+  .limit-label { font-size: 11px; color: var(--text2); margin-top: 3px; }
+
+  /* KPI cards */
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+  }
+  .kpi-label { font-size: 11px; color: var(--text2); margin-bottom: 6px; font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: 0.5px; }
+  .kpi-val { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; line-height: 1; }
+  .kpi-sub { font-size: 11px; color: var(--text3); margin-top: 5px; }
+  .kpi-green { color: var(--accent); }
+  .kpi-blue { color: var(--info); }
+  .kpi-warn { color: var(--warn); }
+  .kpi-white { color: var(--text); }
+
+  /* NOTIFICATION TOAST */
+  .toast {
+    position: fixed;
+    bottom: 20px; right: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-size: 13px;
+    z-index: 999;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    max-width: 300px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast-title { font-weight: 500; margin-bottom: 2px; }
+  .toast-body { color: var(--text2); font-size: 12px; }
+
+  /* utils */
+  .text-accent { color: var(--accent); }
+  .text-muted { color: var(--text2); }
+  .text-mono { font-family: 'DM Mono', monospace; }
+  .full-w { grid-column: 1 / -1; }
+  .flex-between { display: flex; justify-content: space-between; align-items: center; }
+  .mt-8 { margin-top: 8px; }
+  .gap-8 { gap: 8px; }
+  .loading-bar {
+    height: 2px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .loading-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.3s;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="status-dot"></div>
+    Clarity Ops Co
+    <div class="logo-badge">AI Sales Agent</div>
+  </div>
+  <div class="header-right">
+    <div class="header-stat">Leads today: <span id="hdr-leads">0</span></div>
+    <div class="header-stat">Sent: <span id="hdr-sent">0</span></div>
+    <div class="header-stat">Replied: <span id="hdr-replied">0</span></div>
+    <div class="header-stat">Booked: <span id="hdr-booked">0</span></div>
+  </div>
+</header>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Channels</div>
+      <div class="channel-list">
+        <div class="channel-item active" onclick="filterChannel('all')">
+          <div class="channel-icon" style="background:rgba(255,255,255,0.06); font-size:11px;">ALL</div>
+          <div class="channel-name">All Channels</div>
+          <div class="channel-count" id="cnt-all">0</div>
+        </div>
+        <div class="channel-item" onclick="filterChannel('email')">
+          <div class="channel-icon ch-email">✉️</div>
+          <div class="channel-name">Cold Email</div>
+          <div class="channel-count" id="cnt-email">0</div>
+        </div>
+        <div class="channel-item" onclick="filterChannel('instagram')">
+          <div class="channel-icon ch-ig">📸</div>
+          <div class="channel-name">Instagram DM</div>
+          <div class="channel-count" id="cnt-ig">0</div>
+        </div>
+        <div class="channel-item" onclick="filterChannel('facebook')">
+          <div class="channel-icon ch-fb">💬</div>
+          <div class="channel-name">Facebook DM</div>
+          <div class="channel-count" id="cnt-fb">0</div>
+        </div>
+        <div class="channel-item" onclick="filterChannel('sms')">
+          <div class="channel-icon ch-sms">📱</div>
+          <div class="channel-name">SMS / Text</div>
+          <div class="channel-count" id="cnt-sms">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Lead Sources</div>
+      <div class="lead-source-list">
+        <div class="lead-source-item active" onclick="filterSource('all', this)">
+          <div class="source-left"><div class="source-dot"></div>All sources</div>
+        </div>
+        <div class="lead-source-item" onclick="filterSource('google_maps', this)">
+          <div class="source-left"><div class="source-dot"></div>Google Maps</div>
+        </div>
+        <div class="lead-source-item" onclick="filterSource('social', this)">
+          <div class="source-left"><div class="source-dot"></div>Social Search</div>
+        </div>
+        <div class="lead-source-item" onclick="filterSource('claude', this)">
+          <div class="source-left"><div class="source-dot"></div>Claude AI</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Today's Stats</div>
+      <div class="sidebar-stats">
+        <div class="stat-row"><div class="stat-label">Total leads</div><div class="stat-val" id="sb-total">0</div></div>
+        <div class="stat-row"><div class="stat-label">Messages sent</div><div class="stat-val green" id="sb-sent">0</div></div>
+        <div class="stat-row"><div class="stat-label">Replies received</div><div class="stat-val warn" id="sb-replied">0</div></div>
+        <div class="stat-row"><div class="stat-label">Calls booked</div><div class="stat-val green" id="sb-booked">0</div></div>
+        <div class="stat-row"><div class="stat-label">Bounce / opt-out</div><div class="stat-val red" id="sb-bounced">0</div></div>
+      </div>
+    </div>
+
+    <div class="sidebar-section" style="border:none;">
+      <div class="sidebar-label">Agent Status</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <div class="status-dot"></div>
+        <span style="font-size:12px;color:var(--text2);">Running — auto mode</span>
+      </div>
+      <button class="btn btn-ghost" style="width:100%;justify-content:center;font-size:12px;" onclick="toggleAgent()">⏸ Pause Agent</button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <!-- TABS -->
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('compose')">✦ Compose</div>
+      <div class="tab" onclick="switchTab('sequence')">↪ Sequence</div>
+      <div class="tab" onclick="switchTab('leads')">◈ Lead Queue</div>
+      <div class="tab" onclick="switchTab('activity')">◎ Activity</div>
+      <div class="tab" onclick="switchTab('settings')">⚙ Settings</div>
+    </div>
+
+    <!-- COMPOSE PANEL -->
+    <div id="panel-compose" class="panel active">
+      <div id="api-key-banner" style="display:none;background:rgba(255,184,77,0.1);border:1px solid rgba(255,184,77,0.3);border-radius:var(--radius);padding:12px 16px;font-size:13px;color:var(--warn);display:flex;align-items:center;gap:10px;">
+        ⚠️ <span>No API key set. Go to <strong style="cursor:pointer;text-decoration:underline;" onclick="switchTabById('settings')">Settings</strong> and enter your Anthropic API key to use AI features.</span>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi-card"><div class="kpi-label">Sent today</div><div class="kpi-val kpi-blue" id="k-sent">0</div><div class="kpi-sub">across all channels</div></div>
+        <div class="kpi-card"><div class="kpi-label">Reply rate</div><div class="kpi-val kpi-warn" id="k-rate">0%</div><div class="kpi-sub">last 30 messages</div></div>
+        <div class="kpi-card"><div class="kpi-label">Calls booked</div><div class="kpi-val kpi-green" id="k-booked">0</div><div class="kpi-sub">this week</div></div>
+        <div class="kpi-card"><div class="kpi-label">Queue size</div><div class="kpi-val kpi-white" id="k-queue">0</div><div class="kpi-sub">ready to send</div></div>
+      </div>
+
+      <div class="compose-grid">
+        <div class="card">
+          <div class="card-title">Generate Message <div class="badge">AI</div></div>
+
+          <div class="form-row">
+            <label class="form-label">Business name</label>
+            <input class="form-input" id="biz-name" placeholder="e.g. Mike's Barber Shop" />
+          </div>
+          <div class="form-row">
+            <label class="form-label">Business type</label>
+            <input class="form-input" id="biz-type" placeholder="e.g. barbershop, restaurant, plumber…" />
+          </div>
+          <div class="form-row">
+            <label class="form-label">Location</label>
+            <input class="form-input" id="biz-location" placeholder="e.g. Charlotte, NC" value="Charlotte, NC" />
+          </div>
+          <div class="form-row">
+            <label class="form-label">Channel</label>
+            <select class="form-select" id="msg-channel">
+              <option value="email">Cold Email</option>
+              <option value="instagram">Instagram DM</option>
+              <option value="facebook">Facebook DM</option>
+              <option value="sms">SMS / Text</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Tone</label>
+            <select class="form-select" id="msg-tone">
+              <option value="friendly">Friendly & conversational</option>
+              <option value="professional">Professional</option>
+              <option value="direct">Direct & punchy</option>
+              <option value="local">Hyper-local & personal</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Extra context (optional)</label>
+            <textarea class="form-textarea" id="msg-context" placeholder="e.g. they have no website, Google listing says closed on Sundays, spotted on Facebook…" style="min-height:60px;"></textarea>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-primary" id="gen-btn" onclick="generateMessage()">
+              <span class="spinner" id="gen-spinner"></span>
+              <span id="gen-label">✦ Generate Message</span>
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="addToQueue()">+ Add to Queue</button>
+          </div>
+          <div class="loading-bar mt-8"><div class="loading-bar-fill" id="gen-bar"></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title flex-between">
+            <span>Preview <div class="badge" id="preview-channel-badge">Email</div></span>
+            <button class="btn btn-ghost btn-sm" onclick="copyMessage()" id="copy-btn" style="display:none;">Copy</button>
+          </div>
+          <div class="preview-box" id="msg-preview">
+            <div class="preview-placeholder">Your AI-generated message will appear here. Fill in the business details and click Generate.</div>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:8px;">
+            <button class="btn btn-primary btn-sm" id="send-now-btn" style="display:none;" onclick="sendNow()">Send Now</button>
+            <button class="btn btn-ghost btn-sm" id="regen-btn" style="display:none;" onclick="generateMessage()">↺ Regenerate</button>
+          </div>
+          <div id="send-confirm" style="display:none;margin-top:10px;padding:10px;background:var(--accent-dim);border-radius:var(--radius);font-size:12px;color:var(--accent);border:1px solid rgba(0,229,160,0.2);">
+            ✓ Queued! Message will be sent via the selected channel.
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Find Real Leads <div class="badge">Live Web Search</div></div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:14px;margin-top:-6px;">Searches the web for real local businesses in your niche, then filters for ones likely missing a website.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div>
+            <div class="form-row">
+              <label class="form-label">Business niche</label>
+              <input class="form-input" id="bulk-niche" placeholder="e.g. smoke shops, barbershops, nail salons…" />
+            </div>
+            <div class="form-row">
+              <label class="form-label">Target city / area</label>
+              <input class="form-input" id="bulk-city" placeholder="e.g. Charlotte NC, NoDa, South End…" value="Charlotte, NC" />
+            </div>
+            <div class="form-row">
+              <label class="form-label">Results to find</label>
+              <select class="form-select" id="bulk-count">
+                <option value="5">5 businesses</option>
+                <option value="8" selected>8 businesses</option>
+                <option value="12">12 businesses</option>
+              </select>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="bulkImport()" id="bulk-btn">
+              <span class="spinner" id="bulk-spinner"></span>
+              <span id="bulk-label">🔍 Search & Import Real Leads</span>
+            </button>
+            <div id="bulk-status" style="margin-top:10px;font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;display:none;"></div>
+          </div>
+          <div>
+            <label class="form-label">Or paste a list (one per line)</label>
+            <textarea class="form-textarea" id="bulk-paste" style="min-height:120px;" placeholder="Mike's Barber Shop, 123 Main St Charlotte NC&#10;Rosa's Tacos, 456 Trade St Charlotte NC&#10;..."></textarea>
+            <button class="btn btn-ghost btn-sm mt-8" onclick="importPasted()">Import Pasted</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEQUENCE PANEL -->
+    <div id="panel-sequence" class="panel">
+      <div class="flex-between">
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;">Follow-up Sequence</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:3px;">Automated multi-touch outreach to convert no-replies into booked calls</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="generateSequence()">✦ AI Rebuild Sequence</button>
+      </div>
+
+      <div id="sequence-container">
+        <div class="sequence-list" id="seq-list"></div>
+      </div>
+
+      <div class="card" style="margin-top:4px;">
+        <div class="card-title">Sequence Settings</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+          <div class="form-row">
+            <label class="form-label">Max follow-ups</label>
+            <select class="form-select" id="seq-max">
+              <option value="3">3 touches</option>
+              <option value="4" selected>4 touches</option>
+              <option value="5">5 touches</option>
+              <option value="6">6 touches</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Stop on</label>
+            <select class="form-select">
+              <option>Reply received</option>
+              <option>Link clicked</option>
+              <option>Call booked</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Send window</label>
+            <select class="form-select">
+              <option>Weekdays 9am–5pm</option>
+              <option>Mon–Sat 9am–6pm</option>
+              <option>Any time</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEADS PANEL -->
+    <div id="panel-leads" class="panel">
+      <div class="leads-toolbar">
+        <input class="search-box" placeholder="Search leads by name, business, city…" oninput="filterLeads(this.value)" />
+        <button class="btn btn-ghost btn-sm" onclick="generateSampleLeads()">+ Add Sample Leads</button>
+        <button class="btn btn-primary btn-sm" onclick="sendToAll()">⚡ Send to All Queued</button>
+      </div>
+      <div class="leads-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Business</th>
+              <th>Type</th>
+              <th>Channel</th>
+              <th>Source</th>
+              <th>Status</th>
+              <th>Last Touch</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="leads-body">
+            <tr><td colspan="7" style="text-align:center;color:var(--text3);padding:32px;">No leads yet — generate or import some above.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ACTIVITY PANEL -->
+    <div id="panel-activity" class="panel">
+      <div class="flex-between">
+        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;">Activity Feed</div>
+        <button class="btn btn-ghost btn-sm" onclick="clearActivity()">Clear</button>
+      </div>
+      <div class="card" style="padding:0 18px;">
+        <div class="activity-feed" id="activity-feed">
+          <div style="padding:32px;text-align:center;color:var(--text3);">No activity yet. Start sending messages to see the live feed.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS PANEL -->
+    <div id="panel-settings" class="panel">
+      <div class="settings-grid">
+        <div class="card">
+          <div class="card-title">Your Pitch</div>
+          <div class="form-row">
+            <label class="form-label">Company name</label>
+            <input class="form-input" value="Clarity Ops Co" />
+          </div>
+          <div class="form-row">
+            <label class="form-label">Your name</label>
+            <input class="form-input" value="Travis" />
+          </div>
+          <div class="form-row">
+            <label class="form-label">Offer / pitch</label>
+            <textarea class="form-textarea" style="min-height:100px;">We build professional websites for local Charlotte businesses that don't have one yet. Fast turnaround, affordable, and you'll own it outright. Book a free 15-min call to see examples.</textarea>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Booking link</label>
+            <input class="form-input" placeholder="https://calendly.com/travisIsom" />
+          </div>
+          <div class="form-row">
+            <label class="form-label" style="display:flex;align-items:center;gap:6px;">
+              Anthropic API Key
+              <span style="font-family:'DM Mono',monospace;font-size:9px;background:rgba(255,184,77,0.15);color:var(--warn);padding:1px 6px;border-radius:4px;letter-spacing:0.4px;">REQUIRED</span>
+            </label>
+            <input class="form-input" id="api-key-input" type="password" placeholder="sk-ant-api03-…" autocomplete="off" />
+            <div style="margin-top:5px;font-size:11px;color:var(--text3);">Stored locally in your browser only. Never sent anywhere except Anthropic.</div>
+          </div>
+          <button class="btn btn-primary btn-sm mt-8" onclick="saveSettings()">Save Settings</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title" style="display:flex;align-items:center;gap:10px;">
+            Gmail Integration
+            <span id="gmail-status-badge" style="font-family:'DM Mono',monospace;font-size:9px;padding:2px 8px;border-radius:4px;background:rgba(255,91,91,0.15);color:var(--danger);">NOT CONNECTED</span>
+          </div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:14px;">Connect clarity.ops.co26@gmail.com to send real emails from the bot.</div>
+          <div class="form-row">
+            <label class="form-label">Default subject line</label>
+            <input class="form-input" id="gmail-subject" value="Quick question about your business website" />
+          </div>
+          <div class="form-row">
+            <label class="form-label" style="display:flex;align-items:center;gap:6px;">
+              Google OAuth Client ID
+              <span style="font-family:'DM Mono',monospace;font-size:9px;background:rgba(255,184,77,0.15);color:var(--warn);padding:1px 6px;border-radius:4px;">REQUIRED</span>
+            </label>
+            <input class="form-input" id="gmail-client-id" placeholder="xxxxxxxxxx.apps.googleusercontent.com" autocomplete="off" />
+          </div>
+          <div id="gmail-setup-instructions" style="display:none;background:rgba(255,255,255,0.03);border:1px solid var(--border2);border-radius:var(--radius);padding:14px;font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.8;">
+            <strong style="color:var(--text);">How to get your Client ID (5 min):</strong><br>
+            1. Go to <strong>console.cloud.google.com</strong> → create a new project<br>
+            2. Enable the <strong>Gmail API</strong> (APIs & Services → Library)<br>
+            3. Go to <strong>APIs & Services → Credentials → Create Credentials → OAuth Client ID</strong><br>
+            4. Choose <strong>Web application</strong> — add this page's URL to Authorized JavaScript origins AND Authorized redirect URIs<br>
+            5. Copy the <strong>Client ID</strong> and paste it above<br>
+            6. Under <strong>OAuth consent screen</strong>, add clarity.ops.co26@gmail.com as a test user
+          </div>
+          <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;align-items:center;">
+            <button class="btn btn-primary btn-sm" onclick="connectGmail()">
+              <span id="gmail-connect-spinner" class="spinner" style="display:none;"></span>
+              <span id="gmail-connect-label">🔗 Connect Gmail</span>
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="testGmail()" id="gmail-test-btn" style="display:none;">Send Test Email</button>
+            <span style="font-size:11px;color:var(--text3);cursor:pointer;text-decoration:underline;" onclick="el('gmail-setup-instructions').style.display=el('gmail-setup-instructions').style.display==='none'?'block':'none'">Setup instructions</span>
+          </div>
+          <div id="gmail-connect-msg" style="margin-top:10px;font-size:11px;color:var(--text3);display:none;"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Sending Limits</div>
+          <div class="limits-row" style="margin-bottom:16px;">
+            <div class="limit-box"><div class="limit-val">50</div><div class="limit-label">emails / day</div></div>
+            <div class="limit-box"><div class="limit-val">30</div><div class="limit-label">DMs / day</div></div>
+            <div class="limit-box"><div class="limit-val">20</div><div class="limit-label">SMS / day</div></div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><div class="toggle-info-title">Auto-send queued messages</div><div class="toggle-info-sub">Agent sends during your set window</div></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><div class="toggle-info-title">Stop on opt-out keywords</div><div class="toggle-info-sub">STOP, UNSUBSCRIBE, NO THANKS, etc.</div></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><div class="toggle-info-title">Auto follow-up sequence</div><div class="toggle-info-sub">Send follow-ups if no reply in X days</div></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><div class="toggle-info-title">Notify me on replies</div><div class="toggle-info-sub">Get a summary email of new replies</div></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><div class="toggle-info-title">Personalize with business name</div><div class="toggle-info-sub">AI inserts biz name in every message</div></div>
+            <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+
+        <div class="card full-w">
+          <div class="card-title">Connected Channels</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center;">
+              <div style="font-size:22px;margin-bottom:6px;">✉️</div>
+              <div style="font-size:13px;font-weight:500;margin-bottom:4px;">Gmail</div>
+              <div style="font-size:11px;color:var(--accent);margin-bottom:10px;">● Connected</div>
+              <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;">Configure</button>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center;">
+              <div style="font-size:22px;margin-bottom:6px;">📸</div>
+              <div style="font-size:13px;font-weight:500;margin-bottom:4px;">Instagram</div>
+              <div style="font-size:11px;color:var(--text3);margin-bottom:10px;">○ Not connected</div>
+              <button class="btn btn-primary btn-sm" style="width:100%;justify-content:center;">Connect</button>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center;">
+              <div style="font-size:22px;margin-bottom:6px;">💬</div>
+              <div style="font-size:13px;font-weight:500;margin-bottom:4px;">Facebook</div>
+              <div style="font-size:11px;color:var(--text3);margin-bottom:10px;">○ Not connected</div>
+              <button class="btn btn-primary btn-sm" style="width:100%;justify-content:center;">Connect</button>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center;">
+              <div style="font-size:22px;margin-bottom:6px;">📱</div>
+              <div style="font-size:13px;font-weight:500;margin-bottom:4px;">SMS (Twilio)</div>
+              <div style="font-size:11px;color:var(--text3);margin-bottom:10px;">○ Not connected</div>
+              <button class="btn btn-primary btn-sm" style="width:100%;justify-content:center;">Connect</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-title" id="toast-title"></div>
+  <div class="toast-body" id="toast-body"></div>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────
+let leads = [];
+let activity = [];
+let stats = { sent: 0, replied: 0, booked: 0, bounced: 0 };
+let currentFilter = { channel: 'all', source: 'all' };
+let agentPaused = false;
+let generatedMsg = '';
+
+const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
+
+function getApiKey() {
+  return localStorage.getItem('clarity_ops_api_key') || '';
+}
+
+function apiHeaders() {
+  const key = getApiKey();
+  if (!key) {
+    showToast('API key missing', 'Enter your Anthropic API key in Settings → API Key.', 'var(--danger)');
+    switchTabById('settings');
+    throw new Error('No API key set.');
+  }
+  return {
+    'Content-Type': 'application/json',
+    'x-api-key': key,
+    'anthropic-version': '2023-06-01',
+    'anthropic-dangerous-direct-browser-access': 'true'
+  };
+}
+
+// ── TABS ──────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+  if (name === 'sequence' && document.getElementById('seq-list').children.length === 0) {
+    renderDefaultSequence();
+  }
+}
+
+function switchTabById(name) {
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.remove('active');
+    if (t.getAttribute('onclick') && t.getAttribute('onclick').includes("'" + name + "'")) {
+      t.classList.add('active');
+    }
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  const panel = document.getElementById('panel-' + name);
+  if (panel) panel.classList.add('active');
+  if (name === 'sequence' && document.getElementById('seq-list').children.length === 0) {
+    renderDefaultSequence();
+  }
+}
+
+// ── TOAST ──────────────────────────────────────────────
+function showToast(title, body, color) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-title').textContent = title;
+  document.getElementById('toast-body').textContent = body;
+  t.style.borderLeftColor = color || 'var(--accent)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ── STATS ──────────────────────────────────────────────
+function updateStats() {
+  const sent = leads.filter(l => ['sent','replied','booked'].includes(l.status)).length;
+  const replied = leads.filter(l => ['replied','booked'].includes(l.status)).length;
+  const booked = leads.filter(l => l.status === 'booked').length;
+  const bounced = leads.filter(l => l.status === 'bounced').length;
+
+  ['hdr-leads','sb-total'].forEach(id => el(id).textContent = leads.length);
+  ['hdr-sent','sb-sent','k-sent'].forEach(id => el(id).textContent = sent);
+  ['hdr-replied','sb-replied'].forEach(id => el(id).textContent = replied);
+  ['hdr-booked','sb-booked','k-booked'].forEach(id => el(id).textContent = booked);
+  el('sb-bounced').textContent = bounced;
+  el('k-rate').textContent = sent > 0 ? Math.round((replied/sent)*100) + '%' : '0%';
+  el('k-queue').textContent = leads.filter(l => l.status === 'queued').length;
+
+  const chCounts = { email: 0, instagram: 0, facebook: 0, sms: 0 };
+  leads.forEach(l => { if (chCounts[l.channel] !== undefined) chCounts[l.channel]++; });
+  el('cnt-all').textContent = leads.length;
+  el('cnt-email').textContent = chCounts.email;
+  el('cnt-ig').textContent = chCounts.instagram;
+  el('cnt-fb').textContent = chCounts.facebook;
+  el('cnt-sms').textContent = chCounts.sms;
+}
+
+function el(id) { return document.getElementById(id); }
+
+// ── AI MESSAGE GENERATION ──────────────────────────────
+async function generateMessage() {
+  const biz = el('biz-name').value.trim() || 'a local business';
+  const type = el('biz-type').value.trim() || 'small business';
+  const loc = el('biz-location').value.trim() || 'Charlotte, NC';
+  const channel = el('msg-channel').value;
+  const tone = el('msg-tone').value;
+  const ctx = el('msg-context').value.trim();
+
+  const channelInstructions = {
+    email: 'Write a cold email with a subject line (format: Subject: ...\n\nBody: ...). Keep under 120 words. Casual but professional.',
+    instagram: 'Write a short Instagram DM (under 60 words). Very friendly, conversational, no subject line needed. Start with "Hey [Name]!"',
+    facebook: 'Write a Facebook Messenger DM (under 70 words). Warm and friendly. Mention you saw their page. No subject line.',
+    sms: 'Write an SMS text message (under 160 characters including spaces). Ultra brief and punchy. Include name and a single CTA.'
+  };
+
+  const toneMap = {
+    friendly: 'warm, friendly, conversational',
+    professional: 'professional and polished',
+    direct: 'direct, punchy, no fluff',
+    local: 'hyper-local and personal, reference Charlotte NC'
+  };
+
+  const prompt = `You are Travis from Clarity Ops Co, a web design company in Charlotte NC.
+You build professional websites for local small businesses that don't have one yet.
+
+Generate a cold outreach message for this lead:
+- Business name: ${biz}
+- Business type: ${type}
+- Location: ${loc}
+- Channel: ${channel}
+- Tone: ${toneMap[tone]}
+${ctx ? `- Extra context: ${ctx}` : ''}
+
+Instructions: ${channelInstructions[channel]}
+
+The goal is to book a free 15-minute discovery call (link: [BOOKING LINK]).
+Do NOT be pushy or salesy. Be genuine. Mention the specific business by name.
+Reference the fact that they don't have a website yet or could benefit from one.
+End with a soft CTA to book a quick call.
+
+Respond with ONLY the message text, nothing else.`;
+
+  // UI loading state
+  el('gen-btn').disabled = true;
+  el('gen-spinner').style.display = 'inline-block';
+  el('gen-label').textContent = 'Generating…';
+  el('gen-bar').style.width = '30%';
+  el('preview-channel-badge').textContent = channel.charAt(0).toUpperCase() + channel.slice(1);
+  el('msg-preview').innerHTML = '<div class="preview-placeholder" style="color:var(--text3)">AI is writing your message…</div>';
+  el('send-confirm').style.display = 'none';
+  el('copy-btn').style.display = 'none';
+  el('send-now-btn').style.display = 'none';
+  el('regen-btn').style.display = 'none';
+
+  try {
+    el('gen-bar').style.width = '60%';
+    const resp = await fetch(ANTHROPIC_API_URL, {
+      method: 'POST',
+      headers: apiHeaders(),
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await resp.json();
+    generatedMsg = data.content?.find(b => b.type === 'text')?.text?.trim() || 'Could not generate message.';
+
+    el('msg-preview').innerHTML = generatedMsg.replace(/\n/g, '<br>');
+    el('gen-bar').style.width = '100%';
+    el('copy-btn').style.display = 'inline-flex';
+    el('send-now-btn').style.display = 'inline-flex';
+    el('regen-btn').style.display = 'inline-flex';
+    showToast('Message ready', `${channel} message generated for ${biz}`, 'var(--accent)');
+
+    // Auto-add to leads
+    const lead = {
+      id: Date.now(),
+      name: biz,
+      type: type,
+      location: loc,
+      channel: channel,
+      source: 'manual',
+      status: 'queued',
+      message: generatedMsg,
+      lastTouch: new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})
+    };
+    leads.push(lead);
+    updateStats();
+    renderLeads();
+
+  } catch(e) {
+    el('msg-preview').innerHTML = '<span style="color:var(--danger)">Error generating message. Check your connection.</span>';
+    showToast('Error', 'Could not reach AI. Check connection.', 'var(--danger)');
+  } finally {
+    el('gen-btn').disabled = false;
+    el('gen-spinner').style.display = 'none';
+    el('gen-label').textContent = '✦ Generate Message';
+    setTimeout(() => el('gen-bar').style.width = '0%', 1000);
+  }
+}
+
+// ── ADD TO QUEUE ───────────────────────────────────────
+function addToQueue() {
+  if (!generatedMsg) { showToast('No message', 'Generate a message first.', 'var(--warn)'); return; }
+  showToast('Added to queue', 'Message queued for sending.', 'var(--accent)');
+}
+
+function sendNow() {
+  if (!generatedMsg) return;
+  const biz = el('biz-name').value.trim() || 'Lead';
+  const lead = leads.find(l => l.name === biz && l.status === 'queued');
+  if (lead) { lead.status = 'sent'; lead.lastTouch = 'Just now'; }
+  el('send-now-btn').style.display = 'none';
+  el('send-confirm').style.display = 'block';
+  logActivity('sent', `Message sent to ${biz}`, el('msg-channel').value);
+  updateStats();
+  renderLeads();
+  showToast('Sent!', `Message sent to ${biz}`, 'var(--accent)');
+}
+
+function copyMessage() {
+  if (!generatedMsg) return;
+  navigator.clipboard.writeText(generatedMsg).then(() => {
+    showToast('Copied', 'Message copied to clipboard.', 'var(--info)');
+  });
+}
+
+// ── BULK IMPORT (REAL WEB SEARCH) ────────────────────
+async function bulkImport() {
+  const niche = el('bulk-niche').value.trim();
+  const city = el('bulk-city').value.trim() || 'Charlotte, NC';
+  const count = parseInt(el('bulk-count').value) || 8;
+  if (!niche) { showToast('Missing field', 'Enter a business niche first.', 'var(--warn)'); return; }
+
+  el('bulk-btn').disabled = true;
+  el('bulk-spinner').style.display = 'inline-block';
+  el('bulk-label').textContent = 'Searching web…';
+  el('bulk-status').style.display = 'block';
+  el('bulk-status').textContent = '⏳ Searching for real businesses…';
+
+  const prompt = `You are a lead researcher for Clarity Ops Co, a web design company in Charlotte NC that sells websites to local small businesses.
+
+Use web search to find real, currently operating ${niche} businesses in ${city}. Search for them on Google Maps, Yelp, Facebook, or similar directories.
+
+Your goal: find ${count} businesses that likely do NOT have a professional website yet. Signs they lack a website:
+- Their Google/Yelp listing says "No website"
+- They only have a Facebook page
+- Their listing has no URL
+- Small, independent, owner-operated businesses (not chains)
+
+For each business found, return:
+- name: exact business name
+- type: "${niche}"
+- location: their address or neighborhood in ${city}
+- contact: their phone number or email if found
+- source: where you found them (e.g. "Google Maps", "Yelp", "Facebook")
+- has_website: false (only include ones without websites)
+- notes: 1 sentence about why they're a good prospect
+
+Return ONLY a valid JSON array of ${count} objects. No markdown, no explanation, no preamble. Just the JSON array.`;
+
+  try {
+    el('bulk-status').textContent = '🌐 Running web search…';
+    const resp = await fetch(ANTHROPIC_API_URL, {
+      method: 'POST',
+      headers: apiHeaders(),
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 4000,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await resp.json();
+
+    if (data.error) {
+      throw new Error(data.error.message || 'API error');
+    }
+
+    el('bulk-status').textContent = '🔍 Parsing results…';
+
+    // Extract final text response (after tool use)
+    const textBlock = data.content?.filter(b => b.type === 'text').pop();
+    const raw = textBlock?.text?.trim() || '';
+
+    if (!raw) throw new Error('No response from AI');
+
+    // Parse JSON - strip markdown fences if present
+    const clean = raw.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+    
+    // Find the JSON array in the response
+    const arrayMatch = clean.match(/\[[\s\S]*\]/);
+    if (!arrayMatch) throw new Error('Could not find business list in response');
+
+    const businesses = JSON.parse(arrayMatch[0]);
+
+    if (!businesses.length) {
+      showToast('No results', 'Try a different niche or city.', 'var(--warn)');
+      return;
+    }
+
+    const channels = ['email', 'instagram', 'facebook', 'sms'];
+    businesses.forEach((b, i) => {
+      leads.push({
+        id: Date.now() + i,
+        name: b.name || 'Unknown',
+        type: b.type || niche,
+        location: b.location || city,
+        channel: channels[i % 4],
+        source: 'google_maps',
+        status: 'queued',
+        message: '',
+        lastTouch: '—',
+        contact: b.contact || '',
+        notes: b.notes || '',
+        sourceDetail: b.source || 'Web search'
+      });
+    });
+
+    updateStats();
+    renderLeads();
+    logActivity('import', `Found ${businesses.length} real ${niche} leads in ${city}`, 'import');
+    showToast('Real leads found! 🎯', `${businesses.length} ${niche} businesses imported from web search.`, 'var(--accent)');
+    switchTabById('leads');
+
+  } catch(e) {
+    console.error(e);
+    const msg = e.message?.includes('web_search') 
+      ? 'Web search not available on this API key tier. Try upgrading or use paste import.'
+      : 'Search failed: ' + (e.message || 'Unknown error');
+    showToast('Search failed', msg, 'var(--danger)');
+    el('bulk-status').textContent = '❌ ' + msg;
+  } finally {
+    el('bulk-btn').disabled = false;
+    el('bulk-spinner').style.display = 'none';
+    el('bulk-label').textContent = '🔍 Search & Import Real Leads';
+    setTimeout(() => { el('bulk-status').style.display = 'none'; }, 5000);
+  }
+}
+function importPasted() {
+  const text = el('bulk-paste').value.trim();
+  if (!text) return;
+  const lines = text.split('\n').filter(l => l.trim());
+  const channels = ['email','instagram','facebook','sms'];
+  lines.forEach((line, i) => {
+    const parts = line.split(',');
+    leads.push({
+      id: Date.now() + i,
+      name: parts[0]?.trim() || line.trim(),
+      type: 'local business',
+      location: parts.slice(1).join(',').trim() || 'Charlotte, NC',
+      channel: channels[i % 4],
+      source: 'manual',
+      status: 'queued',
+      message: '',
+      lastTouch: '—'
+    });
+  });
+  el('bulk-paste').value = '';
+  updateStats();
+  renderLeads();
+  showToast('Imported!', `${lines.length} leads added.`, 'var(--accent)');
+}
+
+// ── LEADS TABLE ───────────────────────────────────────
+function renderLeads(search) {
+  const tbody = el('leads-body');
+  let filtered = leads;
+  if (currentFilter.channel !== 'all') filtered = filtered.filter(l => l.channel === currentFilter.channel);
+  if (currentFilter.source !== 'all') filtered = filtered.filter(l => l.source === currentFilter.source);
+  if (search) {
+    const q = search.toLowerCase();
+    filtered = filtered.filter(l => l.name.toLowerCase().includes(q) || l.type.toLowerCase().includes(q) || l.location.toLowerCase().includes(q));
+  }
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:32px;">No leads match this filter.</td></tr>';
+    return;
+  }
+  const chBadge = { email: 'badge-email', instagram: 'badge-ig', facebook: 'badge-fb', sms: 'badge-sms' };
+  const chLabel = { email: '✉️ Email', instagram: '📸 Instagram', facebook: '💬 Facebook', sms: '📱 SMS' };
+  const srcLabel = { google_maps: '🗺 Maps', social: '📲 Social', claude: '✦ Claude', manual: '✎ Manual', import: '⬇ Import' };
+  const statusClass = { queued: 's-queued', sent: 's-sent', replied: 's-replied', booked: 's-booked', bounced: 's-bounced' };
+
+  tbody.innerHTML = filtered.map(l => `
+    <tr onclick="selectLead(${l.id})">
+      <td><strong>${l.name}</strong></td>
+      <td style="color:var(--text2)">${l.type}</td>
+      <td><span class="seq-channel-badge ${chBadge[l.channel]||''}">${chLabel[l.channel]||l.channel}</span></td>
+      <td><span class="source-tag">${srcLabel[l.source]||l.source}</span></td>
+      <td><span class="status-pill ${statusClass[l.status]||''}">${l.status}</span></td>
+      <td style="color:var(--text3);font-family:'DM Mono',monospace;font-size:11px;">${l.lastTouch}</td>
+      <td>
+        ${l.status === 'queued' ? `<button class="btn btn-primary btn-sm" onclick="sendLead(event,${l.id})">Send</button>` : ''}
+        ${l.status === 'sent' ? `<button class="btn btn-ghost btn-sm" onclick="markReplied(event,${l.id})">Mark replied</button>` : ''}
+        ${l.status === 'replied' ? `<button class="btn btn-primary btn-sm" onclick="markBooked(event,${l.id})">Booked!</button>` : ''}
+        ${l.status === 'booked' ? `<span style="color:var(--accent);font-size:12px;">✓ Booked</span>` : ''}
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterLeads(q) { renderLeads(q); }
+function filterChannel(ch) {
+  currentFilter.channel = ch;
+  document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  renderLeads();
+}
+function filterSource(src, el) {
+  currentFilter.source = src;
+  document.querySelectorAll('.lead-source-item').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+  renderLeads();
+}
+
+// ── GMAIL INTEGRATION (Google OAuth + Gmail REST API) ────
+const GMAIL_FROM = 'clarity.ops.co26@gmail.com';
+let gmailConnected = false;
+let gmailAccessToken = null;
+
+function checkGmailConnected() {
+  const token = localStorage.getItem('clarity_gmail_token');
+  const expiry = localStorage.getItem('clarity_gmail_expiry');
+  if (token && expiry && Date.now() < parseInt(expiry)) {
+    gmailAccessToken = token;
+    gmailConnected = true;
+    setGmailBadgeConnected();
+  }
+}
+
+function setGmailBadgeConnected() {
+  el('gmail-status-badge').textContent = 'CONNECTED';
+  el('gmail-status-badge').style.background = 'rgba(0,229,160,0.15)';
+  el('gmail-status-badge').style.color = 'var(--accent)';
+  el('gmail-connect-label').textContent = '✓ Reconnect Gmail';
+  if (el('gmail-test-btn')) el('gmail-test-btn').style.display = 'inline-flex';
+  if (el('gmail-connect-msg')) {
+    el('gmail-connect-msg').style.display = 'block';
+    el('gmail-connect-msg').style.color = 'var(--accent)';
+    el('gmail-connect-msg').textContent = '✓ Connected as ' + GMAIL_FROM;
+  }
+}
+
+function connectGmail() {
+  const clientId = (el('gmail-client-id')?.value || '').trim();
+  if (!clientId) {
+    showToast('Client ID needed', 'Paste your Google OAuth Client ID first.', 'var(--warn)');
+    if (el('gmail-setup-instructions')) el('gmail-setup-instructions').style.display = 'block';
+    return;
+  }
+  localStorage.setItem('clarity_gmail_client_id', clientId);
+  el('gmail-connect-spinner').style.display = 'inline-block';
+  el('gmail-connect-label').textContent = 'Opening Google login…';
+
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: window.location.href.split('?')[0].split('#')[0],
+    response_type: 'token',
+    scope: 'https://www.googleapis.com/auth/gmail.send',
+    prompt: 'consent',
+    login_hint: GMAIL_FROM
+  });
+
+  const popup = window.open('https://accounts.google.com/o/oauth2/v2/auth?' + params, 'gmail_auth', 'width=520,height=620,scrollbars=yes');
+
+  const poll = setInterval(() => {
+    try {
+      if (!popup || popup.closed) {
+        clearInterval(poll);
+        el('gmail-connect-spinner').style.display = 'none';
+        el('gmail-connect-label').textContent = '🔗 Connect Gmail';
+        return;
+      }
+      const hash = popup.location.hash;
+      if (hash && hash.includes('access_token')) {
+        clearInterval(poll);
+        popup.close();
+        const tp = new URLSearchParams(hash.substring(1));
+        gmailAccessToken = tp.get('access_token');
+        const exp = parseInt(tp.get('expires_in') || '3600') * 1000;
+        localStorage.setItem('clarity_gmail_token', gmailAccessToken);
+        localStorage.setItem('clarity_gmail_expiry', (Date.now() + exp).toString());
+        gmailConnected = true;
+        setGmailBadgeConnected();
+        el('gmail-connect-spinner').style.display = 'none';
+        showToast('Gmail connected! 📧', 'Real email sending is now active.', 'var(--accent)');
+      }
+    } catch(e) { /* cross-origin during redirect, keep polling */ }
+  }, 600);
+}
+
+async function testGmail() {
+  showToast('Sending test…', 'Sending a test to yourself.', 'var(--info)');
+  try {
+    await sendRawEmail(GMAIL_FROM, '✅ Clarity Ops Bot — Gmail Connected',
+      'Your Gmail integration is working! The bot can now send real outreach emails from this account.');
+    showToast('Test sent! ✅', 'Check your inbox at ' + GMAIL_FROM, 'var(--accent)');
+  } catch(e) { showToast('Test failed', e.message, 'var(--danger)'); }
+}
+
+function buildRFC822(to, subject, body) {
+  const msg = [
+    'From: Travis — Clarity Ops Co <' + GMAIL_FROM + '>',
+    'To: ' + to,
+    'Subject: ' + subject,
+    'MIME-Version: 1.0',
+    'Content-Type: text/plain; charset=UTF-8',
+    '',
+    body
+  ].join('\r\n');
+  return btoa(unescape(encodeURIComponent(msg)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function sendRawEmail(to, subject, body) {
+  if (!gmailAccessToken) throw new Error('Gmail not connected. Go to Settings to connect.');
+  const resp = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + gmailAccessToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ raw: buildRFC822(to, subject, body) })
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    if (resp.status === 401) {
+      gmailConnected = false; gmailAccessToken = null;
+      localStorage.removeItem('clarity_gmail_token');
+      el('gmail-status-badge').textContent = 'EXPIRED';
+      el('gmail-status-badge').style.background = 'rgba(255,91,91,0.15)';
+      el('gmail-status-badge').style.color = 'var(--danger)';
+      throw new Error('Gmail token expired — reconnect in Settings.');
+    }
+    throw new Error(err.error?.message || 'Gmail send failed (HTTP ' + resp.status + ')');
+  }
+  return await resp.json();
+}
+
+async function sendEmailViaGmail(lead) {
+  const subject = el('gmail-subject')?.value?.trim() || 'Quick question about your business website';
+  let body = lead.message || '';
+  if (!body) {
+    body = `Hi there,
+
+My name is Travis with Clarity Ops Co. based in Charlotte, NC.
+
+I came across ${lead.name} and noticed you might not have a website yet. We specialize in building professional websites for local Charlotte businesses — fast turnaround, affordable, and you own it outright.
+
+Would you be open to a free 15-minute call to see some examples? No pressure at all.
+
+Best,
+Travis
+Clarity Ops Co.
+${GMAIL_FROM}`;
+  }
+  const toAddr = lead.contact?.includes('@') ? lead.contact : null;
+  if (!toAddr) {
+    showToast('No email address', lead.name + ' has no email on file. Add one to their contact field.', 'var(--warn)');
+    return false;
+  }
+  await sendRawEmail(toAddr, subject, body);
+  return true;
+}
+
+
+// ── SEND LEAD (updated with real Gmail) ──────────────
+async function sendLead(e, id) {
+  e.stopPropagation();
+  const l = leads.find(x => x.id === id);
+  if (!l) return;
+
+  const btn = e.currentTarget;
+  const origHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="display:inline-block;width:12px;height:12px;border-width:2px;"></span>';
+
+  try {
+    if (l.channel === 'email' && gmailConnected) {
+      const sent = await sendEmailViaGmail(l);
+      if (!sent) { btn.disabled = false; btn.innerHTML = origHTML; return; }
+      l.status = 'sent';
+      l.lastTouch = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+      logActivity('sent', `Real email sent to ${l.name} via Gmail`, 'email');
+      showToast('Email sent! 📧', `Real email delivered to ${l.name}`, 'var(--accent)');
+    } else {
+      // Non-email channels or Gmail not connected — mark as queued/copied
+      if (l.channel === 'email' && !gmailConnected) {
+        showToast('Gmail not connected', 'Go to Settings → Gmail Integration to connect.', 'var(--warn)');
+        btn.disabled = false; btn.innerHTML = origHTML; return;
+      }
+      l.status = 'sent';
+      l.lastTouch = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+      logActivity('sent', `Marked ${l.channel} sent to ${l.name}`, l.channel);
+      showToast('Marked sent', `${l.channel} to ${l.name} marked as sent. Copy the message manually.`, 'var(--info)');
+    }
+    updateStats();
+    renderLeads();
+  } catch(err) {
+    showToast('Send failed', err.message || 'Could not send email.', 'var(--danger)');
+    btn.disabled = false;
+    btn.innerHTML = origHTML;
+  }
+}
+
+async function sendToAll() {
+  const queued = leads.filter(l => l.status === 'queued');
+  if (!queued.length) { showToast('Nothing queued', 'No leads in queue.', 'var(--warn)'); return; }
+
+  const emailLeads = queued.filter(l => l.channel === 'email');
+  const otherLeads = queued.filter(l => l.channel !== 'email');
+
+  if (emailLeads.length && !gmailConnected) {
+    showToast('Gmail not connected', `${emailLeads.length} email leads need Gmail connected first. Go to Settings.`, 'var(--warn)');
+    switchTabById('settings');
+    return;
+  }
+
+  showToast('Sending…', `Sending to ${queued.length} leads…`, 'var(--info)');
+
+  let successCount = 0;
+  for (const l of emailLeads) {
+    try {
+      const sent = await sendEmailViaGmail(l);
+      if (sent) { l.status = 'sent'; l.lastTouch = 'Just now'; successCount++; }
+    } catch(err) { console.error('Failed to send to', l.name, err); }
+  }
+  otherLeads.forEach(l => { l.status = 'sent'; l.lastTouch = 'Just now'; successCount++; });
+
+  logActivity('sent', `Bulk send: ${successCount}/${queued.length} messages sent`, 'email');
+  updateStats();
+  renderLeads();
+  showToast('Bulk send done!', `${successCount} messages sent (${emailLeads.length} real emails via Gmail).`, 'var(--accent)');
+}
+function markReplied(e, id) {
+  e.stopPropagation();
+  const l = leads.find(x => x.id === id);
+  if (!l) return;
+  l.status = 'replied';
+  l.lastTouch = 'Just now';
+  logActivity('reply', `${l.name} replied!`, l.channel);
+  updateStats();
+  renderLeads();
+  showToast('Reply received! 🎉', `${l.name} replied to your ${l.channel}.`, 'var(--warn)');
+}
+function markBooked(e, id) {
+  e.stopPropagation();
+  const l = leads.find(x => x.id === id);
+  if (!l) return;
+  l.status = 'booked';
+  l.lastTouch = 'Just now';
+  logActivity('booked', `${l.name} booked a call!`, l.channel);
+  updateStats();
+  renderLeads();
+  showToast('Call booked! 🔥', `${l.name} is on the calendar.`, 'var(--accent)');
+}
+function selectLead(id) { /* future: open lead detail modal */ }
+
+function generateSampleLeads() {
+  const samples = [
+    { name: "Chico's Barbershop", type: 'barbershop', location: 'NoDa, Charlotte NC', channel: 'email', source: 'google_maps' },
+    { name: "Rosa's Tamales", type: 'restaurant', location: 'South End, Charlotte NC', channel: 'instagram', source: 'social' },
+    { name: "Peak Pressure Washing", type: 'pressure washing', location: 'Ballantyne, Charlotte NC', channel: 'sms', source: 'google_maps' },
+    { name: "Luxe Nail Studio", type: 'nail salon', location: 'Plaza Midwood, Charlotte NC', channel: 'facebook', source: 'social' },
+    { name: "Carolina Clean Drains", type: 'plumber', location: 'University City, Charlotte NC', channel: 'email', source: 'claude' },
+  ];
+  samples.forEach((s, i) => leads.push({ ...s, id: Date.now()+i, status: 'queued', message: '', lastTouch: '—' }));
+  updateStats();
+  renderLeads();
+  showToast('Sample leads added', '5 Charlotte businesses added to queue.', 'var(--accent)');
+}
+
+// ── ACTIVITY ──────────────────────────────────────────
+function logActivity(type, msg, channel) {
+  const icons = { sent: { icon: '✉️', bg: 'rgba(91,159,255,0.15)' }, reply: { icon: '💬', bg: 'rgba(255,184,77,0.15)' }, booked: { icon: '📅', bg: 'rgba(0,229,160,0.15)' }, import: { icon: '⬇', bg: 'rgba(138,158,150,0.1)' } };
+  activity.unshift({ type, msg, channel, time: new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}), ...icons[type] });
+  renderActivity();
+}
+
+function renderActivity() {
+  const feed = el('activity-feed');
+  if (!activity.length) {
+    feed.innerHTML = '<div style="padding:32px;text-align:center;color:var(--text3);">No activity yet.</div>';
+    return;
+  }
+  feed.innerHTML = activity.map(a => `
+    <div class="activity-item">
+      <div class="activity-icon" style="background:${a.bg||'rgba(138,158,150,0.1)'}">${a.icon||'●'}</div>
+      <div class="activity-body">
+        <div class="activity-title">${a.msg}</div>
+        <div class="activity-meta">${a.channel||''} · auto-agent</div>
+      </div>
+      <div class="activity-time">${a.time}</div>
+    </div>
+  `).join('');
+}
+
+function clearActivity() { activity = []; renderActivity(); }
+
+// ── SEQUENCE ──────────────────────────────────────────
+const defaultSeq = [
+  { channel: 'email', delay: 'Day 1', preview: 'Personalized intro email — "Hey [Name], noticed [Business] doesn\'t have a website yet..."', badge: 'badge-email' },
+  { channel: 'instagram', delay: 'Day 3 if no reply', preview: 'Quick Instagram DM — "Hey! Sent you an email a couple days ago about getting you online..."', badge: 'badge-ig' },
+  { channel: 'sms', delay: 'Day 6 if no reply', preview: 'Short text — "Hi [Name], Travis @ Clarity Ops — free 15min call to get [Business] a site?"', badge: 'badge-sms' },
+  { channel: 'email', delay: 'Day 10 — final', preview: 'Breakup email — "Totally get it if timing\'s off. I\'ll leave the door open..."', badge: 'badge-email' },
+];
+
+function renderDefaultSequence() {
+  const list = el('seq-list');
+  list.innerHTML = defaultSeq.map((s, i) => `
+    ${i > 0 ? '<div class="seq-connector"></div>' : ''}
+    <div class="seq-step">
+      <div class="seq-num">${i+1}</div>
+      <div class="seq-content">
+        <div class="seq-header">
+          <span class="seq-channel-badge ${s.badge}">${s.channel}</span>
+          <span class="seq-delay">${s.delay}</span>
+        </div>
+        <div class="seq-preview">${s.preview}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function generateSequence() {
+  const btn = event.target;
+  btn.textContent = '⏳ Building…';
+  btn.disabled = true;
+
+  const prompt = `You are Travis from Clarity Ops Co in Charlotte NC, selling websites to local businesses without one.
+Generate a 4-step cold outreach follow-up sequence across email, Instagram DM, SMS, and Facebook DM.
+Each step: channel, delay (e.g. "Day 1", "Day 3 if no reply"), and a 1-sentence message preview.
+Return ONLY JSON array: [{channel, delay, preview}]. No markdown.`;
+
+  try {
+    const resp = await fetch(ANTHROPIC_API_URL, {
+      method: 'POST',
+      headers: apiHeaders(),
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await resp.json();
+    const raw = data.content?.find(b => b.type === 'text')?.text?.trim() || '[]';
+    const steps = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    const badgeMap = { email: 'badge-email', instagram: 'badge-ig', facebook: 'badge-fb', sms: 'badge-sms' };
+    const list = el('seq-list');
+    list.innerHTML = steps.map((s, i) => `
+      ${i > 0 ? '<div class="seq-connector"></div>' : ''}
+      <div class="seq-step">
+        <div class="seq-num">${i+1}</div>
+        <div class="seq-content">
+          <div class="seq-header">
+            <span class="seq-channel-badge ${badgeMap[s.channel]||''}">${s.channel}</span>
+            <span class="seq-delay">${s.delay}</span>
+          </div>
+          <div class="seq-preview">${s.preview}</div>
+        </div>
+      </div>
+    `).join('');
+    showToast('Sequence rebuilt', 'AI generated a new outreach sequence.', 'var(--accent)');
+  } catch(e) {
+    showToast('Error', 'Could not rebuild sequence.', 'var(--danger)');
+  } finally {
+    btn.textContent = '✦ AI Rebuild Sequence';
+    btn.disabled = false;
+  }
+}
+
+// ── MISC ──────────────────────────────────────────────
+function toggleAgent() {
+  agentPaused = !agentPaused;
+  event.target.textContent = agentPaused ? '▶ Resume Agent' : '⏸ Pause Agent';
+  showToast(agentPaused ? 'Agent paused' : 'Agent running', agentPaused ? 'No messages will be sent.' : 'Auto-send is active.', agentPaused ? 'var(--warn)' : 'var(--accent)');
+}
+
+function saveSettings() {
+  const key = el('api-key-input').value.trim();
+  if (key) {
+    localStorage.setItem('clarity_ops_api_key', key);
+    const banner = el('api-key-banner');
+    if (banner) banner.style.display = 'none';
+  }
+  showToast('Settings saved', 'Pitch and config updated.' + (key ? ' API key stored.' : ''), 'var(--accent)');
+}
+
+function loadSettings() {
+  const saved = localStorage.getItem('clarity_ops_api_key');
+  if (saved && el('api-key-input')) el('api-key-input').value = saved;
+  // Show warning banner if no key
+  const banner = el('api-key-banner');
+  if (banner) banner.style.display = saved ? 'none' : 'flex';
+}
+
+// ── INIT ──────────────────────────────────────────────
+renderDefaultSequence();
+updateStats();
+loadSettings();
+checkGmailConnected();
+</script>
+</body>
+</html>
