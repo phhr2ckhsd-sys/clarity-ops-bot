@@ -1243,7 +1243,7 @@ async function bulkImport() {
 
   const prompt = `You are a lead researcher for Clarity Ops Co, a web design company in Charlotte NC that sells websites to local small businesses.
 
-Use web search to find real, currently operating ${niche} businesses in ${city}. Search for them on Google Maps, Yelp, Facebook, or similar directories.
+Use web search to find real, currently operating ${niche} businesses in ${city}. Search for them on Google Maps, Yelp, Facebook, and their own social media pages.
 
 Your goal: find ${count} businesses that likely do NOT have a professional website yet. Signs they lack a website:
 - Their Google/Yelp listing says "No website"
@@ -1251,11 +1251,18 @@ Your goal: find ${count} businesses that likely do NOT have a professional websi
 - Their listing has no URL
 - Small, independent, owner-operated businesses (not chains)
 
+IMPORTANT: For each business, try hard to find their email address by:
+- Checking their Google Maps listing for an email
+- Checking their Facebook page "About" section for an email
+- Checking their Yelp listing for an email
+- Looking for a contact email on any social profile they have
+
 For each business found, return:
 - name: exact business name
 - type: "${niche}"
 - location: their address or neighborhood in ${city}
-- contact: their phone number or email if found
+- contact: their EMAIL ADDRESS if found (format: name@domain.com) — this is the most important field, search thoroughly
+- phone: their phone number if no email found
 - source: where you found them (e.g. "Google Maps", "Yelp", "Facebook")
 - has_website: false (only include ones without websites)
 - notes: 1 sentence about why they're a good prospect
@@ -1315,7 +1322,7 @@ Return ONLY a valid JSON array of ${count} objects. No markdown, no explanation,
         status: 'queued',
         message: '',
         lastTouch: '—',
-        contact: b.contact || '',
+        contact: b.contact || b.phone || '',
         notes: b.notes || '',
         sourceDetail: b.source || 'Web search'
       });
@@ -1385,22 +1392,35 @@ function renderLeads(search) {
   const srcLabel = { google_maps: '🗺 Maps', social: '📲 Social', claude: '✦ Claude', manual: '✎ Manual', import: '⬇ Import' };
   const statusClass = { queued: 's-queued', sent: 's-sent', replied: 's-replied', booked: 's-booked', bounced: 's-bounced' };
 
-  tbody.innerHTML = filtered.map(l => `
+  tbody.innerHTML = filtered.map(l => {
+    const hasEmail = l.contact && l.contact.includes('@');
+    const needsEmail = l.channel === 'email' && !hasEmail && l.status === 'queued';
+    return `
     <tr onclick="selectLead(${l.id})">
-      <td><strong>${l.name}</strong></td>
+      <td>
+        <strong>${l.name}</strong>
+        ${l.contact && !l.contact.includes('@') ? `<div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px;">${l.contact}</div>` : ''}
+        ${hasEmail ? `<div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px;">${l.contact}</div>` : ''}
+      </td>
       <td style="color:var(--text2)">${l.type}</td>
       <td><span class="seq-channel-badge ${chBadge[l.channel]||''}">${chLabel[l.channel]||l.channel}</span></td>
       <td><span class="source-tag">${srcLabel[l.source]||l.source}</span></td>
       <td><span class="status-pill ${statusClass[l.status]||''}">${l.status}</span></td>
       <td style="color:var(--text3);font-family:'DM Mono',monospace;font-size:11px;">${l.lastTouch}</td>
-      <td>
-        ${l.status === 'queued' ? `<button class="btn btn-primary btn-sm" onclick="sendLead(event,${l.id})">Send</button>` : ''}
+      <td onclick="event.stopPropagation()">
+        ${needsEmail ? `
+          <div style="display:flex;gap:4px;align-items:center;">
+            <input class="form-input" id="email-input-${l.id}" placeholder="email@business.com" style="padding:4px 8px;font-size:11px;height:28px;min-width:150px;" onclick="event.stopPropagation()" />
+            <button class="btn btn-primary btn-sm" onclick="sendLeadWithEmail(event,${l.id})" style="white-space:nowrap;height:28px;padding:0 10px;">Send</button>
+          </div>
+        ` : ''}
+        ${!needsEmail && l.status === 'queued' ? `<button class="btn btn-primary btn-sm" onclick="sendLead(event,${l.id})">Send</button>` : ''}
         ${l.status === 'sent' ? `<button class="btn btn-ghost btn-sm" onclick="markReplied(event,${l.id})">Mark replied</button>` : ''}
         ${l.status === 'replied' ? `<button class="btn btn-primary btn-sm" onclick="markBooked(event,${l.id})">Booked!</button>` : ''}
         ${l.status === 'booked' ? `<span style="color:var(--accent);font-size:12px;">✓ Booked</span>` : ''}
       </td>
     </tr>
-  `).join('');
+  `}).join('');
 }
 
 function filterLeads(q) { renderLeads(q); }
@@ -1604,7 +1624,48 @@ async function sendLead(e, id) {
   }
 }
 
-async function sendToAll() {
+async function sendLeadWithEmail(e, id) {
+  e.stopPropagation();
+  const l = leads.find(x => x.id === id);
+  if (!l) return;
+  const input = document.getElementById('email-input-' + id);
+  const email = input?.value?.trim();
+  if (!email || !email.includes('@')) {
+    showToast('Invalid email', 'Enter a valid email address first.', 'var(--warn)');
+    input?.focus();
+    return;
+  }
+  // Save email to lead
+  l.contact = email;
+  // Now send
+  const btn = e.currentTarget;
+  const origHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="display:inline-block;width:12px;height:12px;border-width:2px;"></span>';
+  try {
+    if (gmailConnected) {
+      const sent = await sendEmailViaGmail(l);
+      if (sent) {
+        l.status = 'sent';
+        l.lastTouch = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+        logActivity('sent', `Real email sent to ${l.name} via Gmail`, 'email');
+        showToast('Email sent! 📧', `Delivered to ${email}`, 'var(--accent)');
+        updateStats();
+        renderLeads();
+      }
+    } else {
+      showToast('Gmail not connected', 'Go to Settings → Gmail Integration to connect.', 'var(--warn)');
+      btn.disabled = false;
+      btn.innerHTML = origHTML;
+    }
+  } catch(err) {
+    showToast('Send failed', err.message || 'Could not send.', 'var(--danger)');
+    btn.disabled = false;
+    btn.innerHTML = origHTML;
+  }
+}
+
+
   const queued = leads.filter(l => l.status === 'queued');
   if (!queued.length) { showToast('Nothing queued', 'No leads in queue.', 'var(--warn)'); return; }
 
