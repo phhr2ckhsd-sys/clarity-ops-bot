@@ -1665,7 +1665,7 @@ async function sendLeadWithEmail(e, id) {
   }
 }
 
-
+async function sendToAll() {
   const queued = leads.filter(l => l.status === 'queued');
   if (!queued.length) { showToast('Nothing queued', 'No leads in queue.', 'var(--warn)'); return; }
 
