@@ -1190,6 +1190,8 @@ Respond with ONLY the message text, nothing else.`;
     leads.push(lead);
     updateStats();
     renderLeads();
+  saveLeads();
+    saveLeads();
 
   } catch(e) {
     el('msg-preview').innerHTML = '<span style="color:var(--danger)">Error generating message. Check your connection.</span>';
@@ -1218,6 +1220,7 @@ function sendNow() {
   logActivity('sent', `Message sent to ${biz}`, el('msg-channel').value);
   updateStats();
   renderLeads();
+  saveLeads();
   showToast('Sent!', `Message sent to ${biz}`, 'var(--accent)');
 }
 
@@ -1235,6 +1238,37 @@ async function bulkImport() {
   const count = parseInt(el('bulk-count').value) || 8;
   if (!niche) { showToast('Missing field', 'Enter a business niche first.', 'var(--warn)'); return; }
 
+  // Build list of already-imported business names for dedup
+  const existingNames = leads.map(l => l.name.toLowerCase().trim());
+
+  // Rotate search angles to avoid getting same results
+  const searchAngles = [
+    `independent ${niche}`,
+    `local ${niche} small business`,
+    `${niche} owner operated`,
+    `${niche} no website`,
+    `${niche} Facebook only`
+  ];
+  const angle = searchAngles[Math.floor(Math.random() * searchAngles.length)];
+
+  // Rotate Charlotte neighborhoods
+  const neighborhoods = [
+    'Charlotte NC', 'NoDa Charlotte', 'South End Charlotte', 'Plaza Midwood Charlotte',
+    'University City Charlotte', 'Steele Creek Charlotte', 'Ballantyne Charlotte',
+    'Pineville NC', 'Matthews NC', 'Concord NC', 'Kannapolis NC', 'Gastonia NC',
+    'Huntersville NC', 'Mooresville NC', 'Monroe NC', 'Mint Hill Charlotte'
+  ];
+  const usedAreas = JSON.parse(localStorage.getItem('clarity_used_areas') || '[]');
+  const availableAreas = neighborhoods.filter(n => !usedAreas.includes(n));
+  const searchArea = availableAreas.length > 0
+    ? availableAreas[Math.floor(Math.random() * availableAreas.length)]
+    : neighborhoods[Math.floor(Math.random() * neighborhoods.length)];
+
+  // Save used area
+  usedAreas.push(searchArea);
+  if (usedAreas.length > 10) usedAreas.shift();
+  localStorage.setItem('clarity_used_areas', JSON.stringify(usedAreas));
+
   el('bulk-btn').disabled = true;
   el('bulk-spinner').style.display = 'inline-block';
   el('bulk-label').textContent = 'Searching web…';
@@ -1243,33 +1277,34 @@ async function bulkImport() {
 
   const prompt = `You are a lead researcher for Clarity Ops Co, a web design company in Charlotte NC that sells websites to local small businesses.
 
-Search the web for real, currently operating ${niche} businesses in ${city}.
+Search for real, currently operating ${niche} businesses in ${searchArea}. Use search terms like "${niche} ${searchArea}", "${niche} near ${searchArea} facebook", "${niche} ${searchArea} contact".
 
-STRICT QUALITY STANDARDS — only include a business if ALL of these are true:
-1. The business is real and currently open (verified on Google Maps, Yelp, or Facebook)
-2. The business has NO professional website (their Google listing shows no website, or they only have a Facebook page)
-3. You found a REAL email address for them (from their Google listing, Facebook About section, Yelp, or their social bio) — do NOT include a business if you cannot find an actual email
-4. They are an independent local business, NOT a chain or franchise
+QUALITY STANDARDS — only include a business if ALL of these are true:
+1. The business is real and currently open (you can verify it exists on Google Maps, Yelp, or Facebook)
+2. The business has NO professional website — their Google listing shows no website URL, or they only have a Facebook/Instagram page
+3. You found REAL contact info — either an email address OR a phone number from their listing
+4. They are independent and locally owned, NOT a chain or franchise
+
+PRIORITY: Try to find an email address for each business by checking their Facebook About section, Google Maps listing, Yelp page, or Instagram bio. If you find an email, put it in the contact field. If only a phone number, put that.
 
 Do NOT include:
-- Businesses where you could not find a real email address
-- Businesses that have a website
-- Chains, franchises, or corporate locations
-- Businesses you are not confident are currently open
+- Businesses with a real website (a Facebook page alone does not count as a website)
+- Chains or franchises
+- Businesses you cannot confirm are currently open
+${existingNames.length ? `- Any of these (already in our system): ${existingNames.slice(-20).join(', ')}` : ''}
 
-For each qualifying business, return:
+For each business return:
 - name: exact business name
 - type: "${niche}"
-- location: their street address in ${city}
-- contact: their REAL email address (required — do not include if no email found)
-- phone: phone number
-- source: where you verified them (e.g. "Google Maps", "Yelp", "Facebook")
-- notes: why they are a good prospect
+- location: street address
+- contact: email address if found, otherwise phone number
+- source: where you found them (Google Maps, Yelp, Facebook, etc.)
+- notes: one sentence on why they need a website
 
-Return a JSON array of up to ${count} businesses that meet ALL criteria above. If you can only find ${Math.floor(count/2)} that qualify, return only those. Quality over quantity. No markdown, no explanation. Just the JSON array.`;
+Return a JSON array of up to ${count} qualifying businesses. Quality over quantity — only include ones you are confident about. No markdown, no explanation. Just the JSON array.`;
 
   try {
-    el('bulk-status').textContent = '🌐 Running web search…';
+    el('bulk-status').textContent = `🌐 Searching ${searchArea} for ${angle}…`;
     const resp = await fetch(ANTHROPIC_API_URL, {
       method: 'POST',
       headers: apiHeaders(),
@@ -1309,11 +1344,16 @@ Return a JSON array of up to ${count} businesses that meet ALL criteria above. I
       return;
     }
 
-    // Filter to only leads with a real email address
+    // Filter: must have contact info (email or phone) and not be a duplicate
     const qualified = businesses.filter(b => {
-      const email = b.contact || b.email || '';
-      return email.includes('@') && email.includes('.');
+      const contact = (b.contact || '').trim();
+      const hasContact = contact.length > 5;
+      const isDupe = existingNames.includes((b.name || '').toLowerCase().trim());
+      return hasContact && !isDupe;
     });
+
+    const emailCount = qualified.filter(b => (b.contact||'').includes('@')).length;
+    const phoneCount = qualified.length - emailCount;
 
     if (!qualified.length) {
       showToast('No qualified leads', 'No businesses with verified emails found. Try a different niche or area.', 'var(--warn)');
@@ -1342,8 +1382,9 @@ Return a JSON array of up to ${count} businesses that meet ALL criteria above. I
     const skipped = businesses.length - qualified.length;
     updateStats();
     renderLeads();
-    logActivity('import', `Imported ${qualified.length} qualified ${niche} leads (${skipped} skipped — no email)`, 'import');
-    showToast('Qualified leads imported 🎯', `${qualified.length} leads with verified emails added.${skipped ? ' ' + skipped + ' skipped (no email).' : ''}`, 'var(--accent)');
+    saveLeads();
+    logActivity('import', `Imported ${qualified.length} ${niche} leads from ${searchArea} (${emailCount} with email, ${phoneCount} phone only)`, 'import');
+    showToast('Leads imported 🎯', `${qualified.length} leads — ${emailCount} have email, ${phoneCount} phone only.${skipped ? ' ' + skipped + ' dupes skipped.' : ''}`, 'var(--accent)');
     switchTabById('leads');
 
   } catch(e) {
@@ -1382,6 +1423,7 @@ function importPasted() {
   el('bulk-paste').value = '';
   updateStats();
   renderLeads();
+  saveLeads();
   showToast('Imported!', `${lines.length} leads added.`, 'var(--accent)');
 }
 
@@ -1441,12 +1483,14 @@ function filterChannel(ch) {
   document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
   event.currentTarget.classList.add('active');
   renderLeads();
+  saveLeads();
 }
 function filterSource(src, el) {
   currentFilter.source = src;
   document.querySelectorAll('.lead-source-item').forEach(e => e.classList.remove('active'));
   el.classList.add('active');
   renderLeads();
+  saveLeads();
 }
 
 // ── GMAIL INTEGRATION (Google OAuth + Gmail REST API) ────
@@ -1629,6 +1673,8 @@ async function sendLead(e, id) {
     }
     updateStats();
     renderLeads();
+  saveLeads();
+    saveLeads();
   } catch(err) {
     showToast('Send failed', err.message || 'Could not send email.', 'var(--danger)');
     btn.disabled = false;
@@ -1664,6 +1710,8 @@ async function sendLeadWithEmail(e, id) {
         showToast('Email sent! 📧', `Delivered to ${email}`, 'var(--accent)');
         updateStats();
         renderLeads();
+  saveLeads();
+    saveLeads();
       }
     } else {
       showToast('Gmail not connected', 'Go to Settings → Gmail Integration to connect.', 'var(--warn)');
@@ -1704,6 +1752,7 @@ async function sendToAll() {
   logActivity('sent', `Bulk send: ${successCount}/${queued.length} messages sent`, 'email');
   updateStats();
   renderLeads();
+  saveLeads();
   showToast('Bulk send done!', `${successCount} messages sent (${emailLeads.length} real emails via Gmail).`, 'var(--accent)');
 }
 function markReplied(e, id) {
@@ -1715,6 +1764,7 @@ function markReplied(e, id) {
   logActivity('reply', `${l.name} replied!`, l.channel);
   updateStats();
   renderLeads();
+  saveLeads();
   showToast('Reply received! 🎉', `${l.name} replied to your ${l.channel}.`, 'var(--warn)');
 }
 function markBooked(e, id) {
@@ -1726,6 +1776,7 @@ function markBooked(e, id) {
   logActivity('booked', `${l.name} booked a call!`, l.channel);
   updateStats();
   renderLeads();
+  saveLeads();
   showToast('Call booked! 🔥', `${l.name} is on the calendar.`, 'var(--accent)');
 }
 function selectLead(id) { /* future: open lead detail modal */ }
@@ -1741,6 +1792,7 @@ function generateSampleLeads() {
   samples.forEach((s, i) => leads.push({ ...s, id: Date.now()+i, status: 'queued', message: '', lastTouch: '—' }));
   updateStats();
   renderLeads();
+  saveLeads();
   showToast('Sample leads added', '5 Charlotte businesses added to queue.', 'var(--accent)');
 }
 
@@ -1864,11 +1916,42 @@ function loadSettings() {
   if (banner) banner.style.display = saved ? 'none' : 'flex';
 }
 
-// ── INIT ──────────────────────────────────────────────
+// ── PERSISTENT STORAGE ───────────────────────────────
+function saveLeads() {
+  try {
+    localStorage.setItem('clarity_leads', JSON.stringify(leads));
+  } catch(e) { console.error('Failed to save leads:', e); }
+}
+
+function loadLeads() {
+  try {
+    const saved = localStorage.getItem('clarity_leads');
+    if (saved) {
+      leads = JSON.parse(saved);
+    }
+  } catch(e) { console.error('Failed to load leads:', e); }
+}
+
+function saveActivityLog() {
+  try {
+    const log = JSON.parse(localStorage.getItem('clarity_activity') || '[]');
+    localStorage.setItem('clarity_activity', JSON.stringify(log.slice(-100)));
+  } catch(e) {}
+}
+
+// Override logActivity to also persist
+const _origLogActivity = typeof logActivity !== 'undefined' ? logActivity : null;
+
+// Load saved leads before rendering
+loadLeads();
 renderDefaultSequence();
 updateStats();
 loadSettings();
 checkGmailConnected();
+
+// Auto-save leads whenever the page is closed or hidden
+window.addEventListener('beforeunload', saveLeads);
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveLeads(); });
 </script>
 </body>
 </html>
