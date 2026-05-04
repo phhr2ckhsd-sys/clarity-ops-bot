@@ -1243,31 +1243,30 @@ async function bulkImport() {
 
   const prompt = `You are a lead researcher for Clarity Ops Co, a web design company in Charlotte NC that sells websites to local small businesses.
 
-Use web search to find real, currently operating ${niche} businesses in ${city}. Search for them on Google Maps, Yelp, Facebook, and their own social media pages.
+Search the web for real, currently operating ${niche} businesses in ${city}.
 
-Your goal: find ${count} businesses that likely do NOT have a professional website yet. Signs they lack a website:
-- Their Google/Yelp listing says "No website"
-- They only have a Facebook page
-- Their listing has no URL
-- Small, independent, owner-operated businesses (not chains)
+STRICT QUALITY STANDARDS — only include a business if ALL of these are true:
+1. The business is real and currently open (verified on Google Maps, Yelp, or Facebook)
+2. The business has NO professional website (their Google listing shows no website, or they only have a Facebook page)
+3. You found a REAL email address for them (from their Google listing, Facebook About section, Yelp, or their social bio) — do NOT include a business if you cannot find an actual email
+4. They are an independent local business, NOT a chain or franchise
 
-IMPORTANT: For each business, try hard to find their email address by:
-- Checking their Google Maps listing for an email
-- Checking their Facebook page "About" section for an email
-- Checking their Yelp listing for an email
-- Looking for a contact email on any social profile they have
+Do NOT include:
+- Businesses where you could not find a real email address
+- Businesses that have a website
+- Chains, franchises, or corporate locations
+- Businesses you are not confident are currently open
 
-For each business found, return:
+For each qualifying business, return:
 - name: exact business name
 - type: "${niche}"
-- location: their address or neighborhood in ${city}
-- contact: their EMAIL ADDRESS if found (format: name@domain.com) — this is the most important field, search thoroughly
-- phone: their phone number if no email found
-- source: where you found them (e.g. "Google Maps", "Yelp", "Facebook")
-- has_website: false (only include ones without websites)
-- notes: 1 sentence about why they're a good prospect
+- location: their street address in ${city}
+- contact: their REAL email address (required — do not include if no email found)
+- phone: phone number
+- source: where you verified them (e.g. "Google Maps", "Yelp", "Facebook")
+- notes: why they are a good prospect
 
-Return ONLY a valid JSON array of ${count} objects. No markdown, no explanation, no preamble. Just the JSON array.`;
+Return a JSON array of up to ${count} businesses that meet ALL criteria above. If you can only find ${Math.floor(count/2)} that qualify, return only those. Quality over quantity. No markdown, no explanation. Just the JSON array.`;
 
   try {
     el('bulk-status').textContent = '🌐 Running web search…';
@@ -1310,8 +1309,19 @@ Return ONLY a valid JSON array of ${count} objects. No markdown, no explanation,
       return;
     }
 
-    const channels = ['email', 'instagram', 'facebook', 'sms'];
-    businesses.forEach((b, i) => {
+    // Filter to only leads with a real email address
+    const qualified = businesses.filter(b => {
+      const email = b.contact || b.email || '';
+      return email.includes('@') && email.includes('.');
+    });
+
+    if (!qualified.length) {
+      showToast('No qualified leads', 'No businesses with verified emails found. Try a different niche or area.', 'var(--warn)');
+      return;
+    }
+
+    const channels = ['email', 'email', 'email', 'facebook'];
+    qualified.forEach((b, i) => {
       leads.push({
         id: Date.now() + i,
         name: b.name || 'Unknown',
@@ -1322,16 +1332,18 @@ Return ONLY a valid JSON array of ${count} objects. No markdown, no explanation,
         status: 'queued',
         message: '',
         lastTouch: '—',
-        contact: b.contact || b.phone || '',
+        contact: b.contact || b.email || '',
+        phone: b.phone || '',
         notes: b.notes || '',
         sourceDetail: b.source || 'Web search'
       });
     });
 
+    const skipped = businesses.length - qualified.length;
     updateStats();
     renderLeads();
-    logActivity('import', `Found ${businesses.length} real ${niche} leads in ${city}`, 'import');
-    showToast('Real leads found! 🎯', `${businesses.length} ${niche} businesses imported from web search.`, 'var(--accent)');
+    logActivity('import', `Imported ${qualified.length} qualified ${niche} leads (${skipped} skipped — no email)`, 'import');
+    showToast('Qualified leads imported 🎯', `${qualified.length} leads with verified emails added.${skipped ? ' ' + skipped + ' skipped (no email).' : ''}`, 'var(--accent)');
     switchTabById('leads');
 
   } catch(e) {
